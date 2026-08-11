@@ -32,6 +32,14 @@ import type {
   CreateBuildingPayload,
   RoomRecord,
   CreateRoomPayload,
+  CourseRecord,
+  CourseOfferingRecord,
+  CourseOfferingDetail,
+  CreateCourseOfferingPayload,
+  EnrollmentRecord,
+  EnrollmentDetail,
+  CreateEnrollmentPayload,
+  UpdateEnrollmentStatusPayload,
 } from '@/types/api';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
@@ -142,6 +150,11 @@ export const programsApi = {
   create: (payload: CreateProgramPayload) => apiClient.post<ProgramRecord>('/programs', payload),
 };
 
+export const coursesApi = {
+  list: () => apiClient.get<CourseRecord[]>('/courses'),
+  get: (id: string) => apiClient.get<CourseRecord>(`/courses/${id}`),
+};
+
 export const studentsApi = {
   list: () => apiClient.get<StudentProfile[]>('/programs/students'),
   get: (id: string) => apiClient.get<StudentProfile>(`/programs/students/${id}`),
@@ -183,4 +196,26 @@ export const roomsApi = {
     apiClient.post<RoomRecord>('/infrastructure/rooms', payload),
 };
 
+// ---------------------------------------------------------------------------
+// Course Offerings endpoints
+// POST /course-offerings     → CreateCourseOfferingPayload → CourseOfferingRecord
+// GET  /course-offerings     → CourseOfferingRecord[]
+// GET  /course-offerings/:id → CourseOfferingDetail
+// ---------------------------------------------------------------------------
+export const courseOfferingsApi = {
+  list: () => apiClient.get<CourseOfferingRecord[]>('/course-offerings'),
+  get: (id: string) => apiClient.get<CourseOfferingDetail>(`/course-offerings/${id}`),
+  create: (payload: CreateCourseOfferingPayload) =>
+    apiClient.post<CourseOfferingRecord>('/course-offerings', payload),
+};
+
 export default apiClient;
+
+export const enrollmentsApi = {
+  list: () => apiClient.get<EnrollmentRecord[]>('/enrollments'),
+  get: (id: string) => apiClient.get<EnrollmentDetail>(`/enrollments/${id}`),
+  create: (payload: CreateEnrollmentPayload) =>
+    apiClient.post<EnrollmentRecord>('/enrollments', payload),
+  updateStatus: (id: string, payload: UpdateEnrollmentStatusPayload) =>
+    apiClient.patch<EnrollmentRecord>(`/enrollments/${id}/status`, payload),
+};

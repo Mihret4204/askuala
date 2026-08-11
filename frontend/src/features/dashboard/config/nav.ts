@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   UserSquare2,
+  ListTodo,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api';
@@ -96,12 +97,28 @@ export const NAV_ITEMS: NavItem[] = [
     roles: STAFF_ROLES,
   },
   {
+    // GET /course-offerings — public read access, creation restricted to ADMIN, REGISTRAR, HOD
+    to: '/dashboard/course-offerings',
+    label: 'Course Offerings',
+    icon: BookOpen,
+    end: false,
+    roles: ALL_ROLES,
+  },
+  {
     // GET /users — restricted to ADMIN, REGISTRAR
     to: '/dashboard/users',
     label: 'Users',
     icon: Users,
     end: false,
     roles: ['ADMIN', 'REGISTRAR'],
+  },
+  {
+    // GET /enrollments — accessible to ADMIN, REGISTRAR, FACULTY_DEAN, HOD, INSTRUCTOR
+    to: '/dashboard/enrollments',
+    label: 'Enrollments',
+    icon: ListTodo,
+    end: false,
+    roles: ['ADMIN', 'REGISTRAR', 'FACULTY_DEAN', 'HOD', 'INSTRUCTOR'],
   },
 ];
 

@@ -431,3 +431,116 @@ export interface CreateRoomPayload {
   computerCount?: number;
   hasLabEquipment?: boolean;
 }
+
+// --- Course Offerings ---
+export type DeliveryMode = 'REGULAR' | 'EXTENSION' | 'DISTANCE';
+export type CourseOfferingStatus = 'PLANNED' | 'OPEN' | 'CLOSED' | 'CANCELLED' | 'COMPLETED';
+
+export interface CourseOfferingRecord {
+  id: string;
+  courseId: string;
+  semesterId: string;
+  instructorId: string | null;
+  roomId: string | null;
+  sectionCode: string;
+  deliveryMode: DeliveryMode;
+  maxCapacity: number;
+  currentEnrollment: number;
+  status: CourseOfferingStatus;
+  syllabusUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  course: Pick<CourseRecord, 'id' | 'code' | 'title' | 'creditHours'>;
+  semester: Pick<SemesterRecord, 'id' | 'code' | 'name'>;
+  instructor: (InstructorRecord & { user: Pick<UserRecord, 'id' | 'email' | 'firstName' | 'lastName'> }) | null;
+  room: (Pick<RoomRecord, 'id' | 'code' | 'roomNumber' | 'capacity'> & { building: Pick<BuildingRecord, 'id' | 'code' | 'name'> }) | null;
+}
+
+export interface CourseOfferingDetail extends CourseOfferingRecord {
+  course: CourseRecord & {
+    prerequisiteRequirements: Array<{
+      id: string;
+      prerequisiteCourse: Pick<CourseRecord, 'id' | 'code' | 'title'>;
+    }>;
+  };
+}
+
+export interface CreateCourseOfferingPayload {
+  courseId: string;
+  semesterId: string;
+  instructorId?: string;
+  roomId?: string;
+  sectionCode: string;
+  deliveryMode?: DeliveryMode;
+  maxCapacity: number;
+  status?: CourseOfferingStatus;
+  syllabusUrl?: string;
+}
+
+// --- Courses (if not already defined) ---
+export interface CourseRecord {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  creditHours: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+// --- Enrollment Domain ---
+export type EnrollmentTypeEnum = 'CREDIT' | 'AUDIT';
+export type EnrollmentStatusEnum = 'ENROLLED' | 'DROPPED' | 'WITHDRAWN' | 'COMPLETED' | 'FAILED';
+
+export interface EnrollmentRecord {
+  id: string;
+  studentId: string;
+  courseOfferingId: string;
+  enrollmentType: EnrollmentTypeEnum;
+  status: EnrollmentStatusEnum;
+  attemptNumber: number;
+  enrolledAt: string;
+  droppedAt: string | null;
+  withdrawnAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: StudentProfile & {
+    user: Pick<UserRecord, 'id' | 'email' | 'firstName' | 'lastName' | 'role'>;
+    program: Pick<ProgramRecord, 'id' | 'code' | 'name'>;
+  };
+  courseOffering: CourseOfferingRecord & {
+    course: Pick<CourseRecord, 'id' | 'code' | 'title' | 'creditHours'>;
+    semester: Pick<SemesterRecord, 'id' | 'code' | 'name'>;
+  };
+}
+
+export interface EnrollmentDetail extends EnrollmentRecord {
+  student: StudentProfile & {
+    user: Pick<UserRecord, 'id' | 'email' | 'firstName' | 'lastName' | 'role'>;
+    program: Pick<ProgramRecord, 'id' | 'code' | 'name'> & {
+      department: Pick<DepartmentRecord, 'id' | 'code' | 'name'>;
+    };
+  };
+  courseOffering: CourseOfferingRecord & {
+    course: CourseRecord & {
+      prerequisiteRequirements: Array<{
+        id: string;
+        prerequisiteCourse: Pick<CourseRecord, 'id' | 'code' | 'title'>;
+      }>;
+    };
+    semester: Pick<SemesterRecord, 'id' | 'code' | 'name'>;
+    instructor: (InstructorRecord & { user: Pick<UserRecord, 'id' | 'email' | 'firstName' | 'lastName'> }) | null;
+    room: (Pick<RoomRecord, 'id' | 'code' | 'roomNumber' | 'capacity'> & { building: Pick<BuildingRecord, 'id' | 'code' | 'name'> }) | null;
+  };
+}
+
+export interface CreateEnrollmentPayload {
+  studentId: string;
+  courseOfferingId: string;
+  enrollmentType?: EnrollmentTypeEnum;
+}
+
+export interface UpdateEnrollmentStatusPayload {
+  status: EnrollmentStatusEnum;
+}

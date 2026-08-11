@@ -12,6 +12,8 @@ import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { AcademicCalendarPage } from '@/features/calendar/pages/AcademicCalendarPage';
 import { BuildingsPage } from '@/features/buildings/pages/BuildingsPage';
 import { RoomsPage } from '@/features/rooms/pages/RoomsPage';
+import { CourseOfferingsPage } from '@/features/offerings/pages/CourseOfferingsPage';
+import { EnrollmentsPage } from '@/features/enrollments/pages/EnrollmentsPage';
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +47,8 @@ export const router = createBrowserRouter([
               { path: 'calendar', element: <AcademicCalendarPage /> },
               { path: 'buildings', element: <BuildingsPage /> },
               { path: 'rooms', element: <RoomsPage /> },
+              { path: 'course-offerings', element: <CourseOfferingsPage /> },
+              { path: 'enrollments', element: <EnrollmentsPage /> },
             ],
           },
         ],
