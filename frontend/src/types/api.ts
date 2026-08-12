@@ -535,6 +535,64 @@ export interface EnrollmentDetail extends EnrollmentRecord {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Timetable domain — matching backend Prisma schema and service returns exactly
+// ---------------------------------------------------------------------------
+
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+export type RecurrencePattern = 'WEEKLY' | 'BIWEEKLY_EVEN' | 'BIWEEKLY_ODD';
+
+export type SessionType = 'LECTURE' | 'LABORATORY' | 'TUTORIAL' | 'SEMINAR';
+
+export type SlotStatus = 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
+
+export interface CreateTimetableSlotPayload {
+  courseOfferingId: string;
+  roomId: string;
+  instructorId?: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  startWeek?: number;
+  endWeek?: number;
+  recurrencePattern?: RecurrencePattern;
+  sessionType?: SessionType;
+}
+
+export interface TimetableSlotRecord {
+  id: string;
+  courseOfferingId: string;
+  roomId: string;
+  instructorId: string | null;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  startWeek: number;
+  endWeek: number;
+  recurrencePattern: RecurrencePattern;
+  sessionType: SessionType;
+  status: SlotStatus;
+  createdAt: string;
+  updatedAt: string;
+  courseOffering: {
+    course: CourseRecord;
+  };
+  room: {
+    building: Pick<BuildingRecord, 'id' | 'code' | 'name'>;
+  };
+  instructor?: {
+    user: Pick<UserRecord, 'id' | 'email' | 'firstName' | 'lastName'>;
+  };
+}
+
+export interface TimetableSlotDetail extends TimetableSlotRecord {
+  courseOffering: {
+    course: CourseRecord;
+    semester: Pick<SemesterRecord, 'id' | 'code' | 'name'>;
+  };
+}
+
 export interface CreateEnrollmentPayload {
   studentId: string;
   courseOfferingId: string;

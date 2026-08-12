@@ -5,7 +5,8 @@ import { EnrollmentsPage } from './EnrollmentsPage';
 import { useAuthStore } from '@/stores/authStore';
 import { enrollmentsApi } from '@/services/api/client';
 
-const mockConfig = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockConfig: any = {
   headers: {},
   timeout: 0,
   baseURL: '',
@@ -13,7 +14,7 @@ const mockConfig = {
   url: '',
   data: undefined,
   params: undefined,
-} as const;
+};
 
 // Mock the APIs
 vi.mock('@/services/api/client', () => ({

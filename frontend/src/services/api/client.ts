@@ -36,6 +36,9 @@ import type {
   CourseOfferingRecord,
   CourseOfferingDetail,
   CreateCourseOfferingPayload,
+  TimetableSlotRecord,
+  TimetableSlotDetail,
+  CreateTimetableSlotPayload,
   EnrollmentRecord,
   EnrollmentDetail,
   CreateEnrollmentPayload,
@@ -207,6 +210,13 @@ export const courseOfferingsApi = {
   get: (id: string) => apiClient.get<CourseOfferingDetail>(`/course-offerings/${id}`),
   create: (payload: CreateCourseOfferingPayload) =>
     apiClient.post<CourseOfferingRecord>('/course-offerings', payload),
+};
+
+export const timetableApi = {
+  list: () => apiClient.get<TimetableSlotRecord[]>('/timetable/slots'),
+  get: (id: string) => apiClient.get<TimetableSlotDetail>(`/timetable/slots/${id}`),
+  create: (payload: CreateTimetableSlotPayload) =>
+    apiClient.post<TimetableSlotRecord>('/timetable/slots', payload),
 };
 
 export default apiClient;

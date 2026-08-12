@@ -14,6 +14,7 @@ import { BuildingsPage } from '@/features/buildings/pages/BuildingsPage';
 import { RoomsPage } from '@/features/rooms/pages/RoomsPage';
 import { CourseOfferingsPage } from '@/features/offerings/pages/CourseOfferingsPage';
 import { EnrollmentsPage } from '@/features/enrollments/pages/EnrollmentsPage';
+import { TimetablePage } from '@/features/timetable/pages/TimetablePage';
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
               { path: 'rooms', element: <RoomsPage /> },
               { path: 'course-offerings', element: <CourseOfferingsPage /> },
               { path: 'enrollments', element: <EnrollmentsPage /> },
+              { path: 'timetable', element: <TimetablePage /> },
             ],
           },
         ],

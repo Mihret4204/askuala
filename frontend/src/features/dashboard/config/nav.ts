@@ -120,6 +120,14 @@ export const NAV_ITEMS: NavItem[] = [
     end: false,
     roles: ['ADMIN', 'REGISTRAR', 'FACULTY_DEAN', 'HOD', 'INSTRUCTOR'],
   },
+  {
+    // GET /timetable/slots — public read, creation restricted to ADMIN, REGISTRAR, HOD
+    to: '/dashboard/timetable',
+    label: 'Timetable',
+    icon: CalendarDays,
+    end: false,
+    roles: ALL_ROLES,
+  },
 ];
 
 /** Filter the nav items to only those the current user role can see. */
