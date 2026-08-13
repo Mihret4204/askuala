@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { authApi } from '@/services/api/client';
 import { useAuthStore } from '@/stores/authStore';
-import type { UserSummary } from '@/types/api';
+import type { AccountStatus, UserRole, UserSummary } from '@/types/api';
 
 export function ProfilePage() {
+  const navigate = useNavigate();
   const storeUser = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
@@ -16,13 +19,19 @@ export function ProfilePage() {
     staleTime: 60_000,
   });
 
+  useEffect(() => {
+    if (data) {
+      useAuthStore.setState({ user: data });
+    }
+  }, [data]);
+
   const user = data ?? storeUser;
 
   if (!user) {
     return null;
   }
 
-  const roleLabel: Record<string, string> = {
+  const roleLabel: Record<UserRole, string> = {
     ADMIN: 'Administrator',
     REGISTRAR: 'Registrar',
     FACULTY_DEAN: 'Faculty Dean',
@@ -31,11 +40,16 @@ export function ProfilePage() {
     STUDENT: 'Student',
   };
 
-  const statusColour: Record<string, string> = {
+  const statusColour: Record<AccountStatus, string> = {
     ACTIVE: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400',
     INACTIVE: 'text-slate-500 bg-slate-100 dark:bg-slate-800',
     SUSPENDED: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30',
     ARCHIVED: 'text-slate-400 bg-slate-100 dark:bg-slate-800',
+  };
+
+  const handleSignOut = () => {
+    clearAuth();
+    navigate('/login');
   };
 
   return (
@@ -98,7 +112,7 @@ export function ProfilePage() {
           Signing out clears your session from this device.
         </p>
         <button
-          onClick={clearAuth}
+          onClick={handleSignOut}
           className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/20"
         >
           Sign out
@@ -106,4 +120,5 @@ export function ProfilePage() {
       </div>
     </div>
   );
+}
 }
