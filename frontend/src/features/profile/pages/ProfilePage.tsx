@@ -49,7 +49,7 @@ export function ProfilePage() {
 
   const handleSignOut = () => {
     clearAuth();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -121,4 +121,4 @@ export function ProfilePage() {
     </div>
   );
 }
-}
+
