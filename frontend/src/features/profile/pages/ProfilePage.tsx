@@ -5,6 +5,22 @@ import { authApi } from '@/services/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import type { AccountStatus, UserRole, UserSummary } from '@/types/api';
 
+const ROLE_LABELS: Record<UserRole, string> = {
+  ADMIN: 'Administrator',
+  REGISTRAR: 'Registrar',
+  FACULTY_DEAN: 'Faculty Dean',
+  HOD: 'Head of Department',
+  INSTRUCTOR: 'Instructor',
+  STUDENT: 'Student',
+};
+
+const STATUS_COLOURS: Record<AccountStatus, string> = {
+  ACTIVE: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400',
+  INACTIVE: 'text-slate-500 bg-slate-100 dark:bg-slate-800',
+  SUSPENDED: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30',
+  ARCHIVED: 'text-slate-400 bg-slate-100 dark:bg-slate-800',
+};
+
 export function ProfilePage() {
   const navigate = useNavigate();
   const storeUser = useAuthStore((s) => s.user);
@@ -30,22 +46,6 @@ export function ProfilePage() {
   if (!user) {
     return null;
   }
-
-  const roleLabel: Record<UserRole, string> = {
-    ADMIN: 'Administrator',
-    REGISTRAR: 'Registrar',
-    FACULTY_DEAN: 'Faculty Dean',
-    HOD: 'Head of Department',
-    INSTRUCTOR: 'Instructor',
-    STUDENT: 'Student',
-  };
-
-  const statusColour: Record<AccountStatus, string> = {
-    ACTIVE: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400',
-    INACTIVE: 'text-slate-500 bg-slate-100 dark:bg-slate-800',
-    SUSPENDED: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30',
-    ARCHIVED: 'text-slate-400 bg-slate-100 dark:bg-slate-800',
-  };
 
   const handleSignOut = () => {
     clearAuth();
@@ -83,14 +83,14 @@ export function ProfilePage() {
           <div className="flex items-center justify-between">
             <dt className="text-sm text-slate-500">Role</dt>
             <dd className="text-sm font-medium">
-              {roleLabel[user.role] ?? user.role}
+              {ROLE_LABELS[user.role] ?? user.role}
             </dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-sm text-slate-500">Status</dt>
             <dd>
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColour[user.status] ?? ''}`}
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOURS[user.status] ?? ''}`}
               >
                 {user.status}
               </span>

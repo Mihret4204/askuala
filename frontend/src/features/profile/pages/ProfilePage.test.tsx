@@ -21,7 +21,6 @@ import type { UserSummary } from '@/types/api';
 // ---------------------------------------------------------------------------
 
 const {
-  getStoreUser,
   setStoreUser,
   clearAuthMock,
   navigateMock,
@@ -45,8 +44,17 @@ const {
       }),
   );
 
+  (useAuthStoreMock as unknown as { setState: unknown }).setState = vi.fn(
+    (update: unknown) => {
+      if (update && typeof update === 'object') {
+        if ('user' in update) {
+          storeUser = (update as { user: UserSummary | null }).user;
+        }
+      }
+    },
+  );
+
   return {
-    getStoreUser: () => storeUser,
     setStoreUser: (user: UserSummary | null) => {
       storeUser = user;
     },
@@ -144,6 +152,7 @@ describe('ProfilePage', () => {
   });
 
   it('shows loading state while fetching', () => {
+    setStoreUser(fakeUser);
     vi.mocked(authApi.me).mockReturnValueOnce(
       new Promise(() => {}) as ReturnType<typeof authApi.me>,
     );
