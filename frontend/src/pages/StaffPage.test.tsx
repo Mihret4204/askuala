@@ -106,13 +106,13 @@ describe('StaffPage', () => {
     });
 
     expect(screen.getByText('alice@uni.edu')).toBeInTheDocument();
-    expect(screen.getByText('ADMIN')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getAllByText('ADMIN')).toHaveLength(2);
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
 
     expect(screen.getByText('Bob Jones')).toBeInTheDocument();
     expect(screen.getByText('bob@uni.edu')).toBeInTheDocument();
-    expect(screen.getByText('STUDENT')).toBeInTheDocument();
-    expect(screen.getByText('Suspended')).toBeInTheDocument();
+    expect(screen.getAllByText('STUDENT')).toHaveLength(2);
+    expect(screen.getByText('SUSPENDED')).toBeInTheDocument();
   });
 
   it('shows create button for ADMIN users but hides it for REGISTRAR users', async () => {
@@ -240,9 +240,8 @@ describe('StaffPage', () => {
 
     renderPage();
 
-    // TableSkeleton renders table rows representing loader placeholder
-    const tableSkeleton = screen.getByRole('table');
-    expect(tableSkeleton).toBeInTheDocument();
+    // TableSkeleton is intentionally div-based, not a semantic table.
+    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('displays ErrorAlert on list fetch API error', async () => {

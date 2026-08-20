@@ -11,8 +11,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import apiClient, { authApi } from './client';
-import type { AuthResponse, UserSummary } from '@/types/api';
+import apiClient, { authApi, usersApi } from './client';
+import type { AuthResponse, CreateUserPayload, UserDetail, UserRecord, UserSummary } from '@/types/api';
 
 // Spy on the axios instance methods — no real HTTP, no mock module conflicts.
 const mockPost = vi.spyOn(apiClient, 'post');
@@ -110,5 +110,54 @@ describe('authApi.me', () => {
 
     expect(result.data).toEqual(fakeUser);
     expect(result.data.role).toBe('STUDENT');
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('usersApi', () => {
+  const user: UserRecord = {
+    id: 'u1',
+    email: 'alice@uni.edu',
+    firstName: 'Alice',
+    lastName: 'Smith',
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    createdAt: '2024-01-01T00:00:00.000Z',
+  };
+
+  const createPayload: CreateUserPayload = {
+    email: 'bob@uni.edu',
+    password: 'secret123',
+    firstName: 'Bob',
+    lastName: 'Jones',
+    role: 'INSTRUCTOR',
+  };
+
+  it('lists users with GET /users', async () => {
+    mockGet.mockReturnValueOnce(ok([user]));
+
+    const result = await usersApi.list();
+
+    expect(mockGet).toHaveBeenCalledWith('/users');
+    expect(result.data).toEqual([user]);
+  });
+
+  it('gets a user with GET /users/:id', async () => {
+    const detail: UserDetail = { ...user, studentProfile: null, instructorProfile: null };
+    mockGet.mockReturnValueOnce(ok(detail));
+
+    const result = await usersApi.get(user.id);
+
+    expect(mockGet).toHaveBeenCalledWith('/users/u1');
+    expect(result.data).toEqual(detail);
+  });
+
+  it('creates a user with POST /users', async () => {
+    mockPost.mockReturnValueOnce(ok(user));
+
+    const result = await usersApi.create(createPayload);
+
+    expect(mockPost).toHaveBeenCalledWith('/users', createPayload);
+    expect(result.data).toEqual(user);
   });
 });
