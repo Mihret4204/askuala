@@ -2,9 +2,9 @@ import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 
 export function RootRedirect() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
 
-  // Wait for Zustand persist to rehydrate before deciding where to send the user.
   if (!isHydrated) {
     return null;
   }
