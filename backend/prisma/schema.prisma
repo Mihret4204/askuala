@@ -1,0 +1,668 @@
+// Prisma schema for Enterprise College Management System (SIS)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------
+// Enums
+// ------------------------------------------------------
+
+enum Role {
+  ADMIN
+  REGISTRAR
+  FACULTY_DEAN
+  HOD
+  INSTRUCTOR
+  STUDENT
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum DegreeType {
+  DIPLOMA
+  BACHELOR
+  MASTER
+  DOCTORATE
+  CERTIFICATE
+}
+
+enum CalendarStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum SemesterStatus {
+  PLANNED
+  REGISTRATION
+  ACTIVE
+  EXAM_PERIOD
+  GRADING
+  COMPLETED
+  ARCHIVED
+}
+
+enum TermType {
+  SEMESTER_1
+  SEMESTER_2
+  TRIMESTER_1
+  TRIMESTER_2
+  TRIMESTER_3
+  SUMMER
+}
+
+enum RoomType {
+  LECTURE_HALL
+  LABORATORY
+  COMPUTER_LAB
+  SEMINAR_ROOM
+  OFFICE
+}
+
+enum PrerequisiteType {
+  PREREQUISITE
+  COREQUISITE
+}
+
+enum DeliveryMode {
+  REGULAR
+  EXTENSION
+  DISTANCE
+}
+
+enum CourseOfferingStatus {
+  PLANNED
+  OPEN
+  CLOSED
+  CANCELLED
+  COMPLETED
+}
+
+enum EnrollmentType {
+  CREDIT
+  AUDIT
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  WITHDRAWN
+  COMPLETED
+  FAILED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum RecurrencePattern {
+  WEEKLY
+  BIWEEKLY_EVEN
+  BIWEEKLY_ODD
+}
+
+enum SessionType {
+  LECTURE
+  LABORATORY
+  TUTORIAL
+  SEMINAR
+}
+
+enum SlotStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum AttendanceSessionType {
+  REGULAR
+  MAKEUP
+  SPECIAL_SESSION
+}
+
+enum AttendanceSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  SUBMITTED
+  LOCKED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum ExcuseReason {
+  MEDICAL
+  ATHLETIC_EVENT
+  FAMILY_EMERGENCY
+  INSTITUTIONAL_REPRESENTATION
+  OTHER
+}
+
+enum ExcuseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum GradeStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PUBLISHED
+}
+
+// ------------------------------------------------------
+// Domain 1: Identity & Academic Structure
+// ------------------------------------------------------
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role          @default(STUDENT)
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  studentProfile          Student?
+  instructorProfile       Instructor?
+  takenAttendanceSessions AttendanceSession[] @relation("AttendanceTaker")
+  reviewedExcuses         AttendanceExcuse[]  @relation("ExcuseReviewer")
+  approvedGrades          Grade[]             @relation("GradeApprovedBy")
+
+  @@map("users")
+}
+
+model Faculty {
+  id              String       @id @default(uuid())
+  code            String       @unique
+  name            String       @unique
+  description     String?      @db.Text
+  establishedYear Int?
+  status          EntityStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  departments Department[]
+
+  @@map("faculties")
+}
+
+model Department {
+  id               String       @id @default(uuid())
+  facultyId        String
+  headInstructorId String?      @unique
+  code             String       @unique
+  name             String
+  description      String?      @db.Text
+  status           EntityStatus @default(ACTIVE)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  faculty        Faculty     @relation(fields: [facultyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  headInstructor Instructor? @relation("DepartmentHead", fields: [headInstructorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  instructors Instructor[] @relation("DepartmentInstructors")
+  programs    Program[]
+  courses     Course[]
+
+  @@unique([facultyId, name])
+  @@index([facultyId, status])
+  @@map("departments")
+}
+
+model Instructor {
+  id             String       @id @default(uuid())
+  userId         String       @unique
+  employeeId     String       @unique
+  departmentId   String
+  title          String?
+  officeLocation String?
+  status         EntityStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  department Department @relation("DepartmentInstructors", fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  headedDepartment   Department?      @relation("DepartmentHead")
+  courseOfferings    CourseOffering[]
+  timetableSlots     TimetableSlot[]
+  attendanceSessions AttendanceSession[]
+  gradedGrades       Grade[]          @relation("GradedByInstructor")
+
+  @@index([departmentId, status])
+  @@map("instructors")
+}
+
+model Program {
+  id                   String       @id @default(uuid())
+  departmentId         String
+  code                 String       @unique
+  name                 String
+  degreeType           DegreeType   @default(BACHELOR)
+  durationYears        Decimal      @db.Decimal(3, 1)
+  totalCreditsRequired Int
+  status               EntityStatus @default(ACTIVE)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  students Student[]
+  courses  Course[]
+
+  @@unique([departmentId, name])
+  @@index([departmentId, status])
+  @@map("programs")
+}
+
+model Student {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  studentIdNumber     String       @unique
+  programId           String
+  batch               Int
+  admissionSemesterId String?
+  status              EntityStatus @default(ACTIVE)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  program           Program   @relation(fields: [programId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  admissionSemester Semester? @relation("StudentAdmissionSemester", fields: [admissionSemesterId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  enrollments Enrollment[]
+
+  @@index([programId, status])
+  @@map("students")
+}
+
+// ------------------------------------------------------
+// Domain 2: Academic Calendar Domain
+// ------------------------------------------------------
+
+model AcademicYear {
+  id        String         @id @default(uuid())
+  yearCode  String         @unique
+  title     String
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean        @default(false)
+  status    CalendarStatus @default(PLANNED)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  semesters Semester[]
+
+  @@index([status, isCurrent])
+  @@map("academic_years")
+}
+
+model Semester {
+  id                    String         @id @default(uuid())
+  academicYearId        String
+  code                  String         @unique
+  name                  String
+  termType              TermType       @default(SEMESTER_1)
+  startDate             DateTime
+  endDate               DateTime
+  registrationStartDate DateTime?
+  registrationEndDate   DateTime?
+  isCurrent             Boolean        @default(false)
+  status                SemesterStatus @default(PLANNED)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  admittedStudents Student[]        @relation("StudentAdmissionSemester")
+  courseOfferings  CourseOffering[]
+
+  @@unique([academicYearId, termType])
+  @@index([academicYearId, status])
+  @@index([status, isCurrent])
+  @@map("semesters")
+}
+
+// ------------------------------------------------------
+// Domain 3: Infrastructure Domain (Buildings & Rooms)
+// ------------------------------------------------------
+
+model Building {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  campusName  String
+  totalFloors Int?
+  status      EntityStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  rooms Room[]
+
+  @@unique([campusName, name])
+  @@index([campusName, status])
+  @@map("buildings")
+}
+
+model Room {
+  id              String       @id @default(uuid())
+  buildingId      String
+  code            String       @unique
+  roomNumber      String
+  name            String?
+  type            RoomType     @default(LECTURE_HALL)
+  capacity        Int
+  floorLevel      Int          @default(0)
+  isAccessible    Boolean      @default(false)
+  hasProjector    Boolean      @default(false)
+  hasComputers    Boolean      @default(false)
+  computerCount   Int          @default(0)
+  hasLabEquipment Boolean      @default(false)
+  status          EntityStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  courseOfferings    CourseOffering[]
+  timetableSlots     TimetableSlot[]
+  attendanceSessions AttendanceSession[]
+
+  @@unique([buildingId, roomNumber])
+  @@index([buildingId, status])
+  @@index([type, capacity, status])
+  @@map("rooms")
+}
+
+// ------------------------------------------------------
+// Domain 6: Course Catalog Domain
+// ------------------------------------------------------
+
+model Course {
+  id                  String       @id @default(uuid())
+  departmentId        String
+  programId           String?
+  code                String
+  title               String
+  description         String?      @db.Text
+  creditHours         Decimal      @db.Decimal(3, 1)
+  lectureHours        Int          @default(0)
+  labHours            Int          @default(0)
+  tutorialHours       Int          @default(0)
+  courseLevel         Int          @default(1)
+  recommendedSemester Int          @default(1)
+  version             Int          @default(1)
+  isElective          Boolean      @default(false)
+  passingGrade        String       @default("D")
+  syllabusUrl         String?
+  status              EntityStatus @default(ACTIVE)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  program    Program?   @relation(fields: [programId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  prerequisiteRequirements CoursePrerequisite[] @relation("TargetCourse")
+  servedAsPrerequisites    CoursePrerequisite[] @relation("PrerequisiteCourse")
+  courseOfferings          CourseOffering[]
+
+  @@unique([code, version])
+  @@index([departmentId, courseLevel, status])
+  @@index([programId, status])
+  @@map("courses")
+}
+
+model CoursePrerequisite {
+  id                   String           @id @default(uuid())
+  courseId             String
+  prerequisiteCourseId String
+  type                 PrerequisiteType @default(PREREQUISITE)
+  minimumGrade         String?
+  isMandatory          Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+
+  course             Course @relation("TargetCourse", fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  prerequisiteCourse Course @relation("PrerequisiteCourse", fields: [prerequisiteCourseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([courseId, prerequisiteCourseId, type])
+  @@index([courseId])
+  @@index([prerequisiteCourseId])
+  @@map("course_prerequisites")
+}
+
+// ------------------------------------------------------
+// Domain 7: Course Offering Domain
+// ------------------------------------------------------
+
+model CourseOffering {
+  id                String               @id @default(uuid())
+  courseId          String
+  semesterId        String
+  instructorId      String?
+  roomId            String?
+  sectionCode       String
+  deliveryMode      DeliveryMode         @default(REGULAR)
+  maxCapacity       Int
+  currentEnrollment Int                  @default(0)
+  status            CourseOfferingStatus @default(PLANNED)
+  syllabusUrl       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  course     Course      @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  semester   Semester    @relation(fields: [semesterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  instructor Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  room       Room?       @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  enrollments        Enrollment[]
+  timetableSlots     TimetableSlot[]
+  attendanceSessions AttendanceSession[]
+
+  @@unique([courseId, semesterId, sectionCode, deliveryMode])
+  @@index([courseId, semesterId])
+  @@index([instructorId])
+  @@index([roomId])
+  @@index([semesterId, status, deliveryMode])
+  @@map("course_offerings")
+}
+
+// ------------------------------------------------------
+// Domain 8: Enrollment Domain
+// ------------------------------------------------------
+
+model Enrollment {
+  id               String           @id @default(uuid())
+  studentId        String
+  courseOfferingId String
+  enrollmentType   EnrollmentType   @default(CREDIT)
+  status           EnrollmentStatus @default(ENROLLED)
+  attemptNumber    Int              @default(1)
+  enrolledAt       DateTime         @default(now())
+  droppedAt        DateTime?
+  withdrawnAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  attendanceRecords AttendanceRecord[]
+  grade             Grade?
+
+  @@index([studentId])
+  @@index([courseOfferingId])
+  @@index([studentId, status])
+  @@map("enrollments")
+}
+
+// ------------------------------------------------------
+// Domain 9: Timetable Domain
+// ------------------------------------------------------
+
+model TimetableSlot {
+  id                String            @id @default(uuid())
+  courseOfferingId  String
+  roomId            String
+  instructorId      String?
+  dayOfWeek         DayOfWeek
+  startTime         String
+  endTime           String
+  startWeek         Int               @default(1)
+  endWeek           Int               @default(16)
+  recurrencePattern RecurrencePattern @default(WEEKLY)
+  sessionType       SessionType       @default(LECTURE)
+  status            SlotStatus        @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  room           Room           @relation(fields: [roomId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  instructor     Instructor?    @relation(fields: [instructorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  attendanceSessions AttendanceSession[]
+
+  @@index([courseOfferingId])
+  @@index([roomId, dayOfWeek, startTime])
+  @@index([instructorId, dayOfWeek, startTime])
+  @@map("timetable_slots")
+}
+
+// ------------------------------------------------------
+// Domain 10: Attendance Domain
+// ------------------------------------------------------
+
+model AttendanceSession {
+  id               String                  @id @default(uuid())
+  courseOfferingId String
+  timetableSlotId  String?
+  instructorId      String?
+  roomId           String?
+  sessionDate      DateTime
+  startTime        String
+  endTime          String
+  topicTitle       String?
+  sessionType      AttendanceSessionType   @default(REGULAR)
+  status           AttendanceSessionStatus @default(SCHEDULED)
+  takenByUserId    String?
+  submittedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  timetableSlot  TimetableSlot? @relation(fields: [timetableSlotId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  instructor     Instructor?    @relation(fields: [instructorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  room           Room?          @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  takenByUser    User?          @relation("AttendanceTaker", fields: [takenByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([courseOfferingId, sessionDate, startTime])
+  @@index([courseOfferingId])
+  @@index([timetableSlotId])
+  @@index([instructorId])
+  @@index([roomId])
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id                  String           @id @default(uuid())
+  attendanceSessionId String
+  enrollmentId        String
+  status              AttendanceStatus @default(PRESENT)
+  minutesLate         Int              @default(0)
+  remarks             String?          @db.Text
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  attendanceSession AttendanceSession @relation(fields: [attendanceSessionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  enrollment        Enrollment        @relation(fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  excuse            AttendanceExcuse?
+
+  @@unique([attendanceSessionId, enrollmentId])
+  @@index([attendanceSessionId])
+  @@index([enrollmentId])
+  @@map("attendance_records")
+}
+
+model AttendanceExcuse {
+  id                 String       @id @default(uuid())
+  attendanceRecordId String       @unique
+  reason             ExcuseReason @default(OTHER)
+  description        String       @db.Text
+  documentUrl        String?
+  status             ExcuseStatus @default(PENDING)
+  reviewedByUserId   String?
+  reviewedAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  attendanceRecord AttendanceRecord @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedByUser   User?            @relation("ExcuseReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([reviewedByUserId])
+  @@map("attendance_excuses")
+}
+
+// ------------------------------------------------------
+// Domain 11: Grades Domain
+// ------------------------------------------------------
+
+model Grade {
+  id             String      @id @default(uuid())
+  enrollmentId   String      @unique
+  letterGrade    String      // e.g. A+, A, A-, B+, B, B-, C+, C, D, F, I, W
+  gradePoints    Decimal     @db.Decimal(4, 2)  // e.g. 4.00, 3.67, 3.33, 0.00
+  percentageScore Decimal?   @db.Decimal(5, 2)  // optional raw percentage
+  isPassing      Boolean     @default(true)
+  status         GradeStatus @default(DRAFT)
+  gradedById     String?     // instructor who entered the grade
+  approvedById   String?     // registrar/admin who approved
+  approvedAt     DateTime?
+  publishedAt    DateTime?
+  remarks        String?     @db.Text
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  enrollment  Enrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  gradedBy    Instructor? @relation("GradedByInstructor", fields: [gradedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  approvedBy  User?       @relation("GradeApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([enrollmentId])
+  @@index([gradedById])
+  @@index([status])
+  @@map("grades")
+}
